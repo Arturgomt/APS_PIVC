@@ -1,4 +1,4 @@
-"""Integra o processamento ao alinhado.py recebido, sem modificar esse arquivo."""
+"""Cadastro e identificação integrados por arquivo ou webcam."""
 
 import argparse
 import importlib.util
@@ -13,9 +13,10 @@ from processamento_imagens.aquisicao import ErroAquisicao, Webcam, ler_imagem
 from processamento_imagens.modelos import caminhos_modelos
 
 RAIZ = Path(__file__).resolve().parents[1]
+MODULO_PADRAO = RAIZ / "Reconhecimento Facial" / "alinhado.py"
 
 
-def carregar_servico(modulo: str | Path, banco: str | Path, pasta_modelos=None):
+def carregar_servico(modulo: str | Path, banco: str | Path, pasta_modelos=None, *, threshold=0.5, margin=0.05):
     caminho = Path(modulo).resolve()
     if not caminho.is_file():
         raise ValueError(f"Módulo do colega não encontrado: {caminho}")
@@ -26,9 +27,9 @@ def carregar_servico(modulo: str | Path, banco: str | Path, pasta_modelos=None):
     especificacao.loader.exec_module(colega)
     if getattr(colega, "VERSION", None) != CONTRATO_SFACE:
         raise ValueError("O contrato do módulo recebido difere do contrato SFace desta entrega.")
-    # Apenas configuração da instância importada: o arquivo do colega não é editado.
-    colega.MODEL = caminhos_modelos(pasta_modelos)["sface"]
-    return colega.RecognitionService(database=Path(banco))
+    return colega.RecognitionService(database=Path(banco),
+                                     model_path=caminhos_modelos(pasta_modelos)["sface"],
+                                     threshold=threshold, margin=margin)
 
 
 def _webcam(args, processador, servico):
@@ -66,7 +67,9 @@ def _webcam(args, processador, servico):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--modulo", required=True, help="Caminho para alinhado.py do colega.")
+    parser.add_argument("--modulo", default=str(MODULO_PADRAO), help="Módulo de reconhecimento; padrão: cópia incluída no projeto.")
+    parser.add_argument("--limiar", type=float, default=0.5)
+    parser.add_argument("--margem", type=float, default=0.05)
     parser.add_argument("--modelos", help="Pasta dos modelos preparados pela sua parte.")
     parser.add_argument("--banco", default=str(RAIZ / "dados" / "cadastros_alinhados.json"))
     fonte = parser.add_mutually_exclusive_group(required=True)
@@ -77,6 +80,8 @@ def main(argv=None):
     parser.add_argument("--max-frames", type=int)
     parser.add_argument("--sem-janela", action="store_true")
     args = parser.parse_args(argv)
+    if not -1 <= args.limiar <= 1 or not 0 <= args.margem <= 2:
+        parser.error("Limiar deve estar em [-1,1] e margem em [0,2].")
     if args.camera < 0 or (args.max_frames is not None and args.max_frames <= 0):
         parser.error("Índice da câmera deve ser >= 0 e limite de frames deve ser positivo.")
     if args.webcam and args.sem_janela and args.max_frames is None:
@@ -87,7 +92,7 @@ def main(argv=None):
         parser.error("Para identificar, informe uma foto; para cadastrar, use --cadastrar ID.")
     try:
         processador = ProcessadorFacial(pasta_modelos=args.modelos)
-        servico = carregar_servico(args.modulo, args.banco, args.modelos)
+        servico = carregar_servico(args.modulo, args.banco, args.modelos, threshold=args.limiar, margin=args.margem)
         if args.webcam:
             return _webcam(args, processador, servico)
         resultados = [processador.processar(ler_imagem(p)) for p in args.entrada]

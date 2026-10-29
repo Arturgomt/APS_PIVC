@@ -19,3 +19,8 @@ Thumbs.db
 node_modules/
 *.log
 !.env.example
+
+# Dados privados criados ao executar a demonstração antiga diretamente.
+Reconhecimento Facial/models/
+Reconhecimento Facial/cadastros*.json
+Reconhecimento Facial/cadastros*.tmp

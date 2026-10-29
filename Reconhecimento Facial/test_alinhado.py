@@ -1,5 +1,6 @@
 """Testes de decisao e persistencia; nao medem acuracia biometrica."""
 import tempfile
+import json
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -61,6 +62,26 @@ class RecognitionTests(unittest.TestCase):
         for image in [np.zeros((224, 224, 3), np.uint8), np.zeros((112, 112, 3), np.float32), None]:
             with self.assertRaises(ValueError):
                 service.embedding(image)
+
+    def test_rejects_malformed_database(self):
+        from alinhado import VERSION
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'invalid.json'
+            with patch('alinhado.MODEL') as model_path, patch('alinhado.cv2.FaceRecognizerSF.create'):
+                model_path.exists.return_value = True
+                for data in [[], {'version': VERSION}, {'version': VERSION, 'people': []},
+                             {'version': VERSION, 'people': {'001': 'invalid'}}]:
+                    path.write_text(json.dumps(data), encoding='utf-8')
+                    with self.assertRaises(ValueError):
+                        RecognitionService(path)
+
+    def test_explicit_model_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            model_path = Path(directory) / 'sface.onnx'
+            model_path.write_bytes(b'test model placeholder')
+            with patch('alinhado.cv2.FaceRecognizerSF.create') as create:
+                RecognitionService(Path(directory) / 'people.json', model_path=model_path)
+                create.assert_called_once_with(str(model_path), '')
 
 
 if __name__ == '__main__':
