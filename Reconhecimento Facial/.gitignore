@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+models/
+cadastros.json
+cadastros.tmp
+cadastros_alinhados.json
+cadastros_alinhados.tmp
