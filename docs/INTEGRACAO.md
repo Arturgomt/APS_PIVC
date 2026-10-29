@@ -4,17 +4,18 @@
 
 O `alinhado.py` fornecido pelo grupo declara `VERSION = 'sface-2021dec-aligned-112-bgr-v1'`. Esta entrega produz exatamente esse contrato: um rosto BGR `uint8`, formato `(112, 112, 3)`, pixels entre 0 e 255 e alinhamento geométrico feito pelo próprio `FaceRecognizerSF.alignCrop` do OpenCV. Não é um vetor de características; o serviço SFace gera o embedding depois de receber a imagem.
 
-O módulo recebido é uma referência externa. O RAR original é preservado. A cópia de análise permanece em `.local/reconhecimento-recebido/`, fora do Git; o projeto não depende desse caminho para processar imagens.
+O módulo incluído está em `Reconhecimento Facial/alinhado.py`. `aps.py` usa essa
+cópia por padrão; não há dependência de RAR ou de `.local/reconhecimento-recebido/`.
 
 ## Chamada em memória
 
 ```python
 from processamento_imagens import ProcessadorFacial, reconhecer
 from processamento_imagens.aquisicao import Webcam
-from alinhado import RecognitionService  # Importação ajustada à pasta do grupo.
+from exemplos.integrar_reconhecimento import carregar_servico, MODULO_PADRAO, RAIZ
 
 processador = ProcessadorFacial()
-servico = RecognitionService()  # Configurar modelos e base conforme o módulo do colega.
+servico = carregar_servico(MODULO_PADRAO, RAIZ / "dados" / "cadastros_alinhados.json")
 
 with Webcam(0) as camera:
     for _ in range(30):
@@ -26,25 +27,28 @@ Criar os objetos uma vez evita recarregar modelos por frame. `reconhecer` retorn
 
 ## Exemplo completo com o arquivo do colega
 
-Prepare os modelos uma vez, e informe o caminho real para `alinhado.py`. Nesta máquina, a cópia de análise permite executar:
+Prepare os modelos uma vez. Na raiz do projeto, execute:
 
 ```powershell
 .venv\Scripts\python.exe -m processamento_imagens preparar-modelos
-.venv\Scripts\python.exe -m exemplos.integrar_reconhecimento --modulo .local/reconhecimento-recebido/alinhado.py --cadastrar pessoa_001 --entrada dados/pessoa_001_a.png dados/pessoa_001_b.png
-.venv\Scripts\python.exe -m exemplos.integrar_reconhecimento --modulo .local/reconhecimento-recebido/alinhado.py --entrada dados/consulta.png
-.venv\Scripts\python.exe -m exemplos.integrar_reconhecimento --modulo .local/reconhecimento-recebido/alinhado.py --webcam --camera 0
+.venv\Scripts\python.exe aps.py --cadastrar pessoa_001 --entrada dados/pessoa_001_a.png dados/pessoa_001_b.png
+.venv\Scripts\python.exe aps.py --entrada dados/consulta.png
+.venv\Scripts\python.exe aps.py --webcam --camera 0
 ```
 
 As fotos acima são exemplos e precisam ser fornecidas pelos participantes. São fotos de entrada, ainda não alinhadas: o exemplo aplica a mesma preparação no cadastro e na consulta. Todas as amostras precisam passar na qualidade antes de o cadastro ser enviado ao serviço. O cadastro por este exemplo é feito com fotos; a identificação também pode usar webcam.
 
-Em outra máquina, substitua `--modulo` pelo caminho onde o colega disponibilizou seu arquivo. O exemplo carrega o Python indicado, verifica a versão do contrato e aponta sua instância para o SFace já preparado em `modelos/`; não edita o arquivo externo. Execute o exemplo com o módulo do grupo que você conhece.
+`--modulo` é opcional e só deve apontar para código Python confiável. Um módulo
+alternativo precisa declarar o mesmo contrato e aceitar `model_path`, `database`,
+`threshold` e `margin` no construtor de `RecognitionService`. A integração passa
+o caminho de SFace explicitamente, sem alterar variáveis globais do módulo.
 
 O padrão de persistência é `dados/cadastros_alinhados.json`, alterável com `--banco CAMINHO`. Essa base pertence ao reconhecimento recebido e contém IDs e embeddings. Não há banco SQL ou permissões nesta entrega. Reutilize o mesmo `--banco` em cadastro e consulta. Alterações por outro processo exigem recarregar o serviço, conforme o contrato do colega.
 
 Para execução limitada, sem janela:
 
 ```powershell
-.venv\Scripts\python.exe -m exemplos.integrar_reconhecimento --modulo .local/reconhecimento-recebido/alinhado.py --webcam --sem-janela --max-frames 30
+.venv\Scripts\python.exe aps.py --webcam --sem-janela --max-frames 30
 ```
 
 No exemplo, consulta de foto retorna 0 para candidato, 2 para captura rejeitada ou identidade não determinada e 1 para erro. Cadastro retorna 0 quando salvo e 2 quando alguma captura é rejeitada. A sessão de webcam retorna 0 no encerramento normal e mostra o resultado da última captura. Q/Esc ou fechar a janela encerra a webcam.

@@ -1,5 +1,47 @@
 # APS PIVC — Projeto do grupo
 
+## Executar processamento e reconhecimento juntos
+
+O ponto de entrada integrado é **`aps.py`**. O processamento já entrega o rosto
+alinhado ao SFace em memória; o JSON exibido é apenas o resumo do resultado.
+
+```powershell
+cd "C:\APS - PIVC\APS_PIVC"
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m processamento_imagens preparar-modelos
+```
+
+Instalação e download são feitos uma vez. Nesta cópia, o ambiente foi preparado
+durante a revisão. Use fotos originais dos participantes, com um único rosto:
+
+```powershell
+# Substitua os arquivos de exemplo pelas suas fotos reais.
+.\.venv\Scripts\python.exe aps.py --cadastrar pessoa_001 --entrada dados/artur_1.jpg dados/artur_2.jpg
+.\.venv\Scripts\python.exe aps.py --entrada dados/consulta.jpg
+.\.venv\Scripts\python.exe aps.py --webcam --camera 0
+```
+
+Cadastro e consulta passam pelo mesmo processamento. A identificação pela câmera
+usa os cadastros anteriores; este comando não cadastra pela webcam. Q/Esc ou fechar
+a janela encerra a sessão. Sem fotos cadastradas, o reconhecimento responde
+`sem_cadastros`. Os arquivos ilustrados acima não acompanham o projeto.
+
+O comando seleciona automaticamente `Reconhecimento Facial/alinhado.py`, usa
+`modelos/` e grava referências em `dados/cadastros_alinhados.json`. Não misture essa
+base com a base da demonstração antiga `Reconhecimento Facial/app.py`.
+
+```powershell
+.\.venv\Scripts\python.exe aps.py --help
+.\.venv\Scripts\python.exe aps.py --limiar 0.5 --margem 0.05 --entrada dados/consulta.jpg
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+O limiar e a margem são experimentais; precisam ser calibrados. Consulte
+[a integração](docs/INTEGRACAO.md) e [a revisão técnica](docs/REVISAO_INTEGRACAO.md).
+O fluxo integrado devolve candidatos, não autorizações de acesso. A API do front-end,
+o banco SQL e os três níveis de permissão continuam fora deste módulo.
+
 | Componente | Guia |
 |---|---|
 | Front-end IRIS / Vite publicado pelo grupo | [Documentação do front-end](docs/FRONTEND.md) |
@@ -22,7 +64,9 @@ python -m venv .venv
 .venv\Scripts\python.exe -m processamento_imagens webcam --camera 0
 ```
 
-Na cópia local já preparada, o ambiente e os modelos estão instalados; execute o último comando. Não é necessário ativar o ambiente nem alterar a política do PowerShell. Em Linux/macOS, use `.venv/bin/python`.
+O último comando acima abre somente o processamento. Para identificar pessoas,
+use `aps.py --webcam` conforme o início deste guia. Não é necessário ativar o ambiente
+nem alterar a política do PowerShell. Em Linux/macOS, use `.venv/bin/python`.
 
 O download explícito prepara YuNet e SFace na pasta `modelos/`, verifica SHA-256 e fixa a revisão oficial. Depois disso, o processamento funciona sem rede. Modelos ausentes geram uma orientação; abrir a webcam não dispara downloads.
 
@@ -76,7 +120,7 @@ resultado = processador.processar(ler_imagem("dados/foto.png"))
 # resposta = reconhecer(resultado, servico)
 ```
 
-`reconhecer` só chama o serviço se a captura tiver exatamente um rosto, qualidade aprovada e alinhamento válido. Um exemplo completo executável, incluindo o carregamento do módulo externo, está em [docs/INTEGRACAO.md](docs/INTEGRACAO.md). O arquivo recebido do colega não é modificado nem incorporado ao código da sua entrega.
+`reconhecer` só chama o serviço se a captura tiver exatamente um rosto, qualidade aprovada e alinhamento válido. O serviço incluído em `Reconhecimento Facial/alinhado.py` recebe o caminho do modelo explicitamente. Veja os comandos em [docs/INTEGRACAO.md](docs/INTEGRACAO.md).
 
 ## Qualidade e demonstração das etapas
 

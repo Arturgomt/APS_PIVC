@@ -30,7 +30,7 @@ def download_model():
 def normalize(value):
     vector = np.asarray(value, dtype=np.float32).reshape(-1)
     norm = np.linalg.norm(vector)
-    if vector.size != 128 or not np.isfinite(vector).all() or norm < 1e-8:
+    if vector.size != 128 or not np.isfinite(vector).all() or not np.isfinite(norm) or norm < 1e-8:
         raise ValueError('Embedding SFace invalido: esperados 128 valores finitos e norma positiva.')
     return vector / norm
 
@@ -55,22 +55,25 @@ def decide(embedding, people, threshold, margin):
 
 
 class RecognitionService:
-    def __init__(self, database=ROOT / 'cadastros_alinhados.json', threshold=0.5, margin=0.05):
-        if not MODEL.exists():
+    def __init__(self, database=ROOT / 'cadastros_alinhados.json', threshold=0.5, margin=0.05, model_path=None):
+        model_path = MODEL if model_path is None else Path(model_path)
+        if not model_path.exists():
             raise ValueError('Baixe o modelo: python alinhado.py baixar-modelo')
         if not -1 <= threshold <= 1 or not 0 <= margin <= 2:
             raise ValueError('Limiar ou margem fora do intervalo permitido.')
-        self.model = cv2.FaceRecognizerSF.create(str(MODEL), '')
+        self.model = cv2.FaceRecognizerSF.create(str(model_path), '')
         self.database = Path(database)
         self.threshold, self.margin = threshold, margin
         self.people = {}
         if self.database.exists():
             data = json.loads(self.database.read_text(encoding='utf-8'))
-            if data.get('version') != VERSION:
+            if not isinstance(data, dict) or data.get('version') != VERSION:
                 raise ValueError('Base incompativel com modelo/preparacao atual.')
-            self.people = data['people']
+            self.people = data.get('people')
+            if not isinstance(self.people, dict):
+                raise ValueError('Base invalida: people deve ser um objeto de cadastros.')
             for person_id, samples in self.people.items():
-                if not isinstance(person_id, str) or not person_id.strip() or not samples:
+                if not isinstance(person_id, str) or not person_id.strip() or not isinstance(samples, list) or not samples:
                     raise ValueError('Cadastro invalido.')
                 for sample in samples:
                     normalize(sample)
