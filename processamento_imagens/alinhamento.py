@@ -24,11 +24,13 @@ class PreparadorSFace:
                 "Modelos não encontrados. Execute: python -m processamento_imagens preparar-modelos. "
                 "Arquivos ausentes: " + ", ".join(ausentes)
             )
+        # Bytes em vez do caminho: o OpenCV no Windows não abre .onnx em pastas com acentos.
+        vazio = np.empty(0, np.uint8)
         self.detector = cv2.FaceDetectorYN.create(
-            str(caminhos["yunet"]), "", (320, 320),
+            "onnx", np.fromfile(caminhos["yunet"], np.uint8), vazio, (320, 320),
             config.confianca_deteccao, config.limiar_nms, 5000,
         )
-        self.alinhador = cv2.FaceRecognizerSF.create(str(caminhos["sface"]), "")
+        self.alinhador = cv2.FaceRecognizerSF.create("onnx", np.fromfile(caminhos["sface"], np.uint8), vazio)
 
     def detectar(self, bgr: np.ndarray) -> np.ndarray | None:
         self.detector.setInputSize((bgr.shape[1], bgr.shape[0]))

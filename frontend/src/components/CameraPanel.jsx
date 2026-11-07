@@ -64,7 +64,7 @@ export default function CameraPanel({ onCapture, small = false }) {
   return <div className={`camera-component ${small ? 'compact' : ''}`}>
     <div className="camera-stage">
       <video ref={video} playsInline muted autoPlay className={running ? 'active' : ''}/>
-      {!running && <div className="camera-placeholder"><span className="camera-graphic"><ScanFace size={76} strokeWidth={1.1}/></span><strong>Câmera pronta para conexão</strong><p>Ative a webcam ou selecione uma imagem para teste.</p></div>}
+      {!running && <div className="camera-placeholder"><span className="camera-graphic"><ScanFace size={76} strokeWidth={1.1}/></span></div>}
       <div className={`camera-live-badge ${running ? 'on' : ''}`}><span/> {running ? 'Câmera ativa' : 'Câmera desligada'}</div>
       {running && <span className="camera-corner-label"><ScanFace size={16}/> Captura local</span>}
       {preview && <div className="captured-preview"><img alt="Prévia da captura facial" src={preview}/><button className="icon-btn" onClick={clear} aria-label="Descartar imagem"><RotateCcw size={17}/></button><span>Imagem capturada</span></div>}
