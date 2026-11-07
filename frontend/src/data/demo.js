@@ -14,9 +14,9 @@ export const INITIAL_LOGS = [
 ];
 
 export const ACCESS_LEVELS = [
-  { value: 1, title: 'Nível 1', description: 'Permissão geral' },
-  { value: 2, title: 'Nível 2', description: 'Acesso restrito · Diretores' },
-  { value: 3, title: 'Nível 3', description: 'Acesso exclusivo · Ministro(a)' },
+  { value: 1, title: 'Nível 1', description: 'Analista' },
+  { value: 2, title: 'Nível 2', description: 'Diretor' },
+  { value: 3, title: 'Nível 3', description: 'Ministro' },
 ];
 
 const USERS_KEY = 'iris-demo-users-v2';
