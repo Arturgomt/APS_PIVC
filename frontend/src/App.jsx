@@ -10,9 +10,6 @@ import Enrollment from './pages/Enrollment';
 import HistoryPage from './pages/HistoryPage';
 import Profile from './pages/Profile';
 import SettingsPage from './pages/SettingsPage';
-import CadastroPage from './pages/CadastroPage';
-import PermissionsPage from './pages/PermissionsPage';
-import { CADASTROS } from './data/cadastros';
 
 function Protected({ role, children }) {
   const { user } = useAuth();
@@ -35,8 +32,6 @@ export default function App() {
     <Route path="/usuario" element={<Protected role="user"><Dashboard/></Protected>}/>
     <Route path="/usuario/reconhecimento" element={<Protected role="user"><Recognize/></Protected>}/>
     <Route path="/usuario/perfil" element={<Protected role="user"><Profile/></Protected>}/>
-    {CADASTROS.map((c) => <Route key={c.rota} path={`/${c.rota}`} element={<Protected role={c.apenasAdmin ? 'admin' : undefined}><CadastroPage key={c.rota} config={c}/></Protected>}/>)}
-    <Route path="/permissoes" element={<Protected><PermissionsPage/></Protected>}/>
     <Route path="*" element={<HomeRedirect/>}/>
   </Routes></AuthProvider>;
 }

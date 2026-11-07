@@ -19,7 +19,7 @@ export const recognitionService = {
       authorized: allowed,
       user: current,
       confidence: null,
-      reason: 'Simulação, sem análise facial.',
+      reason: 'SIMULAÇÃO: nível verificado com o usuário da sessão, sem análise facial.',
       timestamp: new Date().toISOString(),
       simulated: true,
     };
@@ -31,14 +31,9 @@ export const recognitionService = {
   },
   async enroll({ image, userId, token }) {
     if (!image) throw new Error('Capture uma imagem antes de continuar.');
-    if (DEMO_MODE) return { success: false, simulated: true, message: 'Simulação: nada foi salvo.' };
+    if (DEMO_MODE) return { success: false, simulated: true, message: 'Prévia da foto capturada. Nenhum dado biométrico foi armazenado.' };
     const form = new FormData(); form.append('image', image, 'cadastro.jpg'); form.append('user_id', userId);
     return apiRequest('/face-enrollments', { method: 'POST', data: form, token });
   },
   async history(token) { return DEMO_MODE ? demoStore.getLogs() : apiRequest('/access-logs', { token }); },
-  async samples(userId, token) { return apiRequest(`/users/${encodeURIComponent(userId)}/face-samples`, { token }); },
-  // Sem sampleId apaga todas as amostras do usuário.
-  async removeSamples(userId, sampleId, token) {
-    return apiRequest(`/users/${encodeURIComponent(userId)}/face-samples${sampleId ? `/${sampleId}` : ''}`, { method: 'DELETE', token });
-  },
 };

@@ -44,19 +44,18 @@ class RecognitionTests(unittest.TestCase):
     def test_persistence_duplicate_and_deletion(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'people.json'
-            model = Path(directory) / 'sface.onnx'
-            model.write_bytes(b'test model placeholder')
-            with patch('alinhado.cv2.FaceRecognizerSF.create') as create:
+            with patch('alinhado.MODEL') as model_path, patch('alinhado.cv2.FaceRecognizerSF.create') as create:
+                model_path.exists.return_value = True
                 create.return_value.feature.return_value = self.a.reshape(1, -1)
-                service = RecognitionService(path, model_path=model)
+                service = RecognitionService(path)
                 image = np.zeros((112, 112, 3), dtype=np.uint8)
                 service.register('001', [image])
-                restored = RecognitionService(path, model_path=model)
+                restored = RecognitionService(path)
                 self.assertEqual(restored.identify(image)['person_id'], '001')
                 with self.assertRaises(ValueError):
                     restored.register('001', [image])
                 restored.delete('001')
-                self.assertEqual(RecognitionService(path, model_path=model).people, {})
+                self.assertEqual(RecognitionService(path).people, {})
 
     def test_rejects_wrong_image_contract(self):
         service = RecognitionService.__new__(RecognitionService)
@@ -68,14 +67,13 @@ class RecognitionTests(unittest.TestCase):
         from alinhado import VERSION
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'invalid.json'
-            model = Path(directory) / 'sface.onnx'
-            model.write_bytes(b'test model placeholder')
-            with patch('alinhado.cv2.FaceRecognizerSF.create'):
+            with patch('alinhado.MODEL') as model_path, patch('alinhado.cv2.FaceRecognizerSF.create'):
+                model_path.exists.return_value = True
                 for data in [[], {'version': VERSION}, {'version': VERSION, 'people': []},
                              {'version': VERSION, 'people': {'001': 'invalid'}}]:
                     path.write_text(json.dumps(data), encoding='utf-8')
                     with self.assertRaises(ValueError):
-                        RecognitionService(path, model_path=model)
+                        RecognitionService(path)
 
     def test_explicit_model_path(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -83,10 +81,7 @@ class RecognitionTests(unittest.TestCase):
             model_path.write_bytes(b'test model placeholder')
             with patch('alinhado.cv2.FaceRecognizerSF.create') as create:
                 RecognitionService(Path(directory) / 'people.json', model_path=model_path)
-                framework, model, config = create.call_args.args
-                self.assertEqual(framework, 'onnx')
-                self.assertEqual(model.tobytes(), b'test model placeholder')
-                self.assertEqual(config.size, 0)
+                create.assert_called_once_with(str(model_path), '')
 
 
 if __name__ == '__main__':
