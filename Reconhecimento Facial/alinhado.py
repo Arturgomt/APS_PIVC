@@ -61,8 +61,7 @@ class RecognitionService:
             raise ValueError('Baixe o modelo: python alinhado.py baixar-modelo')
         if not -1 <= threshold <= 1 or not 0 <= margin <= 2:
             raise ValueError('Limiar ou margem fora do intervalo permitido.')
-        # Bytes em vez do caminho: o OpenCV no Windows nao abre .onnx em pastas com acentos.
-        self.model = cv2.FaceRecognizerSF.create('onnx', np.fromfile(model_path, dtype=np.uint8), np.empty(0, np.uint8))
+        self.model = cv2.FaceRecognizerSF.create(str(model_path), '')
         self.database = Path(database)
         self.threshold, self.margin = threshold, margin
         self.people = {}
